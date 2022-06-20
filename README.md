@@ -72,7 +72,8 @@ The `predict()` function outputs multiple trajectory predictions with probabilit
 ]
 ```
 ## Useful notebooks
-An experiment comparing the performance of the new method to Trajectron++ and the constant velocity model is in the notebook `results_comparison.ipynb`.
+- `results_comparison.ipynb`: An experiment comparing the performance of the new method to Trajectron++ and the constant velocity model.
+- `generative_model_illustrations.ipynb`: Allows running our method with illustrations of various steps of the algorithm (generated future trajectories, kernel density map of the future trajectories, chosen representative predictions)
 
 ## Visualization
 A visualization script `visualize.py` is included for illustrating the workflow 
