@@ -7,3 +7,4 @@ scikit-learn==1.0.2
 scikit-learn-extra==0.2.0
 scipy==1.7.3
 tqdm==4.62.3
+pyqt5==5.15.6
