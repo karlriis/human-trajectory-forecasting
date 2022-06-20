@@ -4,12 +4,14 @@ import scipy.stats as st
 from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
 
+# Decide whether to use the constant velocity model or constant turning model for creating predictions
 def get_model(params):
     if np.random.rand() < params['CONST_VEL_MODEL_PROB']:
         return 'CONST_VEL'
     else:
         return 'CONST_VEL_W_ROTATION'
-    
+
+# Get a random action to apply during the CVM prediction
 def get_action(params):
     if np.random.rand() < params['STOP_PROB']:
         return 'STOP'
@@ -19,7 +21,7 @@ def get_action(params):
         return 'ANGLE_CHANGE'
     return None
 
-# Decide whether to use average or discounted/weighted average as const velocity
+# Calculate the base constant velocity for CVM predictions
 def get_const_vel(params, sample_vel_x, sample_vel_y):
     if np.random.rand() < params['DISCOUNT_AVG_PROB']:
         discount = np.random.uniform(low=params['DISCOUNT_LOWER_BOUND'])
@@ -32,7 +34,7 @@ def get_const_vel(params, sample_vel_x, sample_vel_y):
         
     return const_vel_x, const_vel_y
 
-# Decide whether to use average or discounted average angle
+# Calculate the base constant velocity for the constant turning model predictions
 def get_angle(params, sample_vel_x, sample_vel_y):
     all_angles = []
     for i in range(1, len(sample_vel_x)):
@@ -48,13 +50,14 @@ def get_angle(params, sample_vel_x, sample_vel_y):
         angle = np.mean(all_angles)
     return angle
 
+# Calculate final displacement error
 def calculate_FDE(pred_x, pred_y, test_x, test_y):
-
     final_displacement_x = pred_x[-1] - test_x[-1]
     final_displacement_y = pred_y[-1] - test_y[-1]
     FDE = np.sqrt(final_displacement_x**2 + final_displacement_y**2)
     
     return FDE
+
 
 def rotate(origin, point, angle):
     """
@@ -69,6 +72,7 @@ def rotate(origin, point, angle):
     qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
     return qx, qy
 
+# Generates one future trajectory for a historical path
 def generate_trajectory(sample_x, sample_y, params, length=5):
     # calculate velocity data
     sample_vel_x = [(sample_x[i] - sample_x[i-1]) + np.random.normal(0, params['NOISE']) for i in range(1, len(sample_x))]
@@ -125,10 +129,10 @@ def generate_trajectory(sample_x, sample_y, params, length=5):
             const_vel_y = rot_y - prev_y
         
     return pred_x, pred_y
-            
+
+# Run k-means clustering on many future trajectory predictions
 def run_clustering(pred_x_list, pred_y_list, no_of_clusters, clustering_method='KMeans'):
     final_points = []
-    # this can be optimized as this is done in the parent method already
     for i in range(len(pred_x_list)):
         final_points.append([pred_x_list[i][-1], pred_y_list[i][-1]])
     
@@ -144,6 +148,7 @@ def run_clustering(pred_x_list, pred_y_list, no_of_clusters, clustering_method='
     # Should probably also return labels or do the averaged clusters already contain them?
     return cluster_avg_x, cluster_avg_y, no_of_elements_per_cluster
 
+# Get the average trajectory of each cluster attained from K-means clustering
 def get_clustered_averages(all_pred_x, all_pred_y, no_of_clusters, cluster_labels):
     no_of_elements_per_cluster = []
     for i in range(no_of_clusters):
@@ -165,7 +170,7 @@ def get_clustered_averages(all_pred_x, all_pred_y, no_of_clusters, cluster_label
         
     return cluster_avg_x, cluster_avg_y, no_of_elements_per_cluster
 
-# Smoothen an array of coordinates of one axis [[1.1, 1.7, 1.5, ...], [2.3, 3.2, 2.9, ...], ...]
+# Smoothen an array of coordinates of one axis
 def smoothen(list_of_coordinates):
     copy = list_of_coordinates.copy()
     for coordinates in copy:
@@ -201,8 +206,7 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
     # distribute the data to representative sets
     no_of_traj = len(sorted_all_pred_x)
 
-    
-    # find the closest TOP% (first cluster size) of trajectories for the highest density trajectory
+    # find the closest TOP% (first cluster size) of trajectories to the highest density trajectory
     highest_density_x = sorted_all_pred_x[0]
     highest_density_y = sorted_all_pred_y[0]
     largest_distance = None
@@ -237,11 +241,9 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
     
     # Return values will be in a format of [pred_xs: list, pred_ys: list, pred_weigths: list]
     return_values = [[], [], []]
-    
-    
+
     ## Loop over the representative groups and run K-means clustering on each
     ## (if group should return more than 1 representative trajectory)
-    
     prev_group_size_end = 0
     group_size_ends = params['GROUP_PERCENTAGES']
     for group_idx, group_size_end in enumerate(group_size_ends):
@@ -279,4 +281,3 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
    
     # Return [all_x_predictions, all_y_predictions, all_weights]
     return return_values
-    
