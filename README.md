@@ -72,3 +72,5 @@ An example of calling the script with all options:
 ```
 $ python visualize.py --data-root './raw_data' --dataset 'eth' --model-params './example_params.json' --record
 ```
+
+Pre-rendered visualization videos of the eth and hotel datasets are stored under `media`.
