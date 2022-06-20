@@ -2,6 +2,11 @@
 This repository contains the code for the human trajectory forecasting method developed as part of the following Master's thesis https://comserv.cs.ut.ee/ati_thesis/datasheet.php?id=75142&year=2022
 
 The main repository for the Master's thesis resides in https://github.com/karlriis/trajectory-forecasting. Some additional useful files and notebooks can be found there.
+
+## Setup
+The method was developed and tested with Python 3.9 and the libraries listed in `requirements.txt`.
+The required libraries can be easily installed via `pip install -r requirements.txt`.
+
 ## Our method
 The new trajectory forecasting method resides in `generative_model.py`.
 The main function for using the method is `predict()`. Its input parameters are shown in the table below (non-compulsory parameters with default values are marked with \*).
@@ -65,5 +70,5 @@ and one boolean flag
 
 An example of calling the script with all options:
 ```
-$ python3 visualize.py --data-root './raw_data' --dataset 'eth' --model-params './example_params.json' --record
+$ python visualize.py --data-root './raw_data' --dataset 'eth' --model-params './example_params.json' --record
 ```
