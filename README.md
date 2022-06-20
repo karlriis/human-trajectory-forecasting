@@ -20,7 +20,27 @@ The main function for using the method is `predict()`. Its input parameters are 
 | clustering_method*  | String ('KMeans' or 'KMedoids', default 'Kmeans') | The clustering method used for choosing representative predictions |
 | smoothing*  | Boolean (default True) | Applies smoothing to representative predictions to reduce sudden turns |
 
-The following shows a possible value for the `params` argument:
+The following table describes the values for the `params` argument mentioned above. These parameters manipulate
+the inner workings of the algorithm. They control the generation of the large number of possible future trajectories
+and the process of choosing a limited number of representative predictions from them. A more in depth thought process
+behind the actions behind each parameter can be found in the aforementioned thesis under chapter 3.
+
+| Parameter name | Parameter value | Meaning                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------ | ------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NOISE  | Float | The amount of noise added to every historical datapoint when generating one potential future trajectory. The noise is sampled from a Gaussian distribution with a mean of 0 and a standard deviation of NOISE.                                                                                                                                                                         |
+| NO_OF_TRAJECTORIES | Integer | The number of future trajectories generated for a historical trajectory by the generative step.                                                                                                                                                                                                                                                                                        |
+| CONST_VEL_MODEL_PROB | Float (between 0.0 and 1.0) | The probability of choosing the constant velocity model for generating potential future trajectories (applied before the generation of each trajectory). If the CVM isn't chosen for prediction, then the constant turning model is chosen instead.                                                                                                                                    |
+| DISCOUNT_AVG_PROB | Float (between 0.0 and 1.0) | The probability of using discounted/weighted averaging when calculating the base velocity and the base angle for the constant velocity model / constant turning model.                                                                                                                                                                                                                 |
+| DISCOUNT_LOWER_BOUND | Boolean (default True) | The lower bound for sampling the discount factor (or weight) for discounted average calculation                                                                                                                                                                                                                                                                                        |
+| STOP_PROB  | Float (between 0.0 and 1.0) | Probability of applying the stopping event during the generation of each future trajectory                                                                                                                                                                                                                                                                                             |
+| VELOCITY_CHANGE_PROB | Float (between 0.0 and 1.0) | The probability of changing the velocity during the generation of each future trajectory                                                                                                                                                                                                                                                                                               |
+| VELOCITY_CHANGE_NOISE | Float | The standard deviation used for sampling noise from a Gaussian distribution which is added to the constant velocity when the constant velocity change event is applied                                                                                                                                                                                                                 |
+| ANGLE_CHANGE_PROB | Float (between 0.0 and 1.0) | The probability of changing the direction of the velocity during the generation of each future trajectory                                                                                                                                                                                                                                                                              |
+| ANGLE_CHANGE_NOISE | Float | The standard deviation used for sampling noise from a Gaussian distribution which is added to the constant angle when the angle change event is applied                                                                                                                                                                                                                                |
+| GROUP_PERCENTAGES | List of floats (have to be increasing, low value of >0.0, max value of 1.0) | Specifies the percentile ranges of groups for dividing generated trajectories into partitions. E.g. \[0.2, 0.68, 0.95, 1.0\] would create four groups where the first group would contain the top 20% of the generated trajectories, the second group would contain top 20% to top 68%, the third group would contain top 68% to top 95% and the fourth would contain top 95% to 100%. |
+| GROUP_CLUSTER_COUNT | List of integers (has to match the length of GROUP_PERCENTAGES) | Specifies the parameter k for K-Means clustering done for each group of generated trajectories. In other words, this controls how many representative predictions are chosen from each percentage group. For example, [1, 5, 5, 5] would mean that a single representative is chosen from the first group, and five representatives from every other group.                            |
+
+The following is an example of the `params` argument:
 ```
 params = {
     'NOISE': 0.05, 
@@ -38,7 +58,7 @@ params = {
 }
 ```
 
-The method outputs multiple trajectory predictions with probabilities as follows:
+The `predict()` function outputs multiple trajectory predictions with probabilities as follows:
 ```
 [
   [[0.4, 0.6, 0.7, ...], [1.3, 1.4, 1.6, ...], ...], # The x-coordinate values for each future trajectory 
