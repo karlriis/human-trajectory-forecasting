@@ -1,6 +1,7 @@
 # Human trajectory forecasting
 This repository contains the code for the human trajectory forecasting method developed as part of the following Master's thesis https://comserv.cs.ut.ee/ati_thesis/datasheet.php?id=75142&year=2022
 
+The main repository for the Master's thesis resides in https://github.com/karlriis/trajectory-forecasting. Some additional useful files and notebooks can be found there.
 ## Our method
 The new trajectory forecasting method resides in `generative_model.py`.
 The main function for using the method is `predict()`. Its input parameters are shown in the table below (non-compulsory parameters with default values are marked with \*).
@@ -50,8 +51,9 @@ visualize the movement of humans in the ETH dataset and the predictions of the n
 
 ![visualization demo](media/visualization_demo.gif)
 
-The script is based on the visualization script provided in the OpenTraj repository (https://github.com/crowdbotp/OpenTraj). 
-The datasets with videos are sourced from there as well.
+The script is based on the visualization script provided in the OpenTraj repository https://github.com/crowdbotp/OpenTraj. 
+The datasets with videos are sourced from there as well. The script currently supports the visualization of the sets of data in the ETH dataset (eth and hotel).
+The script can be enhanced by including other datasets with videos from OpenTraj to the `./raw_data` folder and by editing the end of `visualization.py` to accomodate the new sets similarly to ETH.
 
 The script has three non-compulsory parameters:
 - `--data-root` specifies the location of the OpenTraj datasets (by default in the `./raw_data` folder)
