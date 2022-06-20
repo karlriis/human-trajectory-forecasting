@@ -183,7 +183,7 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
     all_pred_x, all_pred_y = [], []
     all_final_x, all_final_y = [], []
     
-    for i in range(params['NO_OF_TRAJECTORIES']):
+    for _ in range(params['NO_OF_TRAJECTORIES']):
         pred_x, pred_y = generate_trajectory(sample_x, sample_y, params, trajectory_length)
         all_pred_x.append(pred_x)
         all_pred_y.append(pred_y)
@@ -206,21 +206,30 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
     # distribute the data to representative sets
     no_of_traj = len(sorted_all_pred_x)
 
-    # find the closest TOP% (first cluster size) of trajectories to the highest density trajectory
+    # The first group has a slightly different behaviour than the rest. We don't want to just take the top [first_group_size] % of
+    # the generated trajectories by KDE, but we want to take the top [first_group_size] % of the trajectories closest to our 'best'
+    # trajectory (the one with the highest estimated density). We can think of the first group as the group surrounding the densest area.
+
+    # To achieve this, we take the trajectory with the highest density estimation and calculate every other trajectory's distance
+    # from it. Based on the distances, we move the ones with the lowest distance to the front of the sorted generated trajectories.
     highest_density_x = sorted_all_pred_x[0]
     highest_density_y = sorted_all_pred_y[0]
     largest_distance = None
     closest_indexes = np.array([], dtype=np.int8)
     closest_distances = np.array([])
     
+    TOP_GROUP_MAX_SIZE = no_of_traj*params['GROUP_PERCENTAGES'][0]
     for idx in range(len(sorted_all_pred_x)):
         distance = calculate_FDE(highest_density_x, highest_density_y, sorted_all_pred_x[idx], sorted_all_pred_y[idx])
         
-        if len(closest_indexes) < no_of_traj*params['GROUP_PERCENTAGES'][0]:
+        # Firstly, we fill the closest_indexes array with as many instances as we allow in the first group
+        if len(closest_indexes) < TOP_GROUP_MAX_SIZE:
             closest_indexes = np.append(closest_indexes, idx)
             closest_distances = np.append(closest_distances, distance)
             if largest_distance == None or largest_distance < distance:
                 largest_distance = distance
+        # Now the closest_indexes is initially 'full'. If the current instance is closer than the furthest one
+        # in the closest_indexes as of now, then we replace it.
         else:
             if largest_distance > distance:
                 index_max = np.argmax(closest_distances)
@@ -228,6 +237,7 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
                 closest_distances[index_max] = distance
                 largest_distance = np.amax(closest_distances)
     
+    # get the closest trajectories
     closest_x = sorted_all_pred_x[closest_indexes]
     closest_y = sorted_all_pred_y[closest_indexes]
 
