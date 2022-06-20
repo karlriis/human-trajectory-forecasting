@@ -4,7 +4,7 @@ import scipy.stats as st
 from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
 
-# Decide whether to use the constant velocity model or constant turning model for creating predictions
+# Decide whether to use the constant velocity model or constant turning model for generating future trajectories
 def get_model(params):
     if np.random.rand() < params['CONST_VEL_MODEL_PROB']:
         return 'CONST_VEL'
@@ -58,13 +58,9 @@ def calculate_FDE(pred_x, pred_y, test_x, test_y):
     
     return FDE
 
-
+#Rotate a point counterclockwise by a given angle around a given origin.
+#The angle should be given in radians.
 def rotate(origin, point, angle):
-    """
-    Rotate a point counterclockwise by a given angle around a given origin.
-
-    The angle should be given in radians.
-    """
     ox, oy = origin
     px, py = point
 
@@ -74,20 +70,22 @@ def rotate(origin, point, angle):
 
 # Generates one future trajectory for a historical path
 def generate_trajectory(sample_x, sample_y, params, length=5):
-    # calculate velocity data
+    # Add noise to the historical trajectory
     sample_vel_x = [(sample_x[i] - sample_x[i-1]) + np.random.normal(0, params['NOISE']) for i in range(1, len(sample_x))]
     sample_vel_y = [(sample_y[i] - sample_y[i-1]) + np.random.normal(0, params['NOISE']) for i in range(1, len(sample_y))]
     
+    # Calculate the constant velocity and constant angle
     const_vel_x, const_vel_y = get_const_vel(params, sample_vel_x, sample_vel_y)
     angle = get_angle(params, sample_vel_x, sample_vel_y)
 
-    # start predicting
+    # Start predicting
     pred_x = []
     pred_y = []
     model = get_model(params)
-    for i in range(length):
+    for _ in range(length):
         action = get_action(params)
         if action == 'STOP':
+            # For the stop event, the next predicted point will be exactly the same as the last point
             if len(pred_x) == 0:
                 pred_x.append(sample_x[-1])
                 pred_y.append(sample_y[-1])
@@ -124,7 +122,7 @@ def generate_trajectory(sample_x, sample_y, params, length=5):
             pred_x.append(rot_x)
             pred_y.append(rot_y)
             
-            # redefine the average velocity as it now has a new heading
+            # Redefine the average velocity as it now has a new heading
             const_vel_x = rot_x - prev_x
             const_vel_y = rot_y - prev_y
         
@@ -145,7 +143,7 @@ def run_clustering(pred_x_list, pred_y_list, no_of_clusters, clustering_method='
     clustering.fit(final_points)
 
     cluster_avg_x, cluster_avg_y, no_of_elements_per_cluster = get_clustered_averages(pred_x_list, pred_y_list, no_of_clusters, clustering.labels_)
-    # Should probably also return labels or do the averaged clusters already contain them?
+
     return cluster_avg_x, cluster_avg_y, no_of_elements_per_cluster
 
 # Get the average trajectory of each cluster attained from K-means clustering
@@ -174,8 +172,8 @@ def get_clustered_averages(all_pred_x, all_pred_y, no_of_clusters, cluster_label
 def smoothen(list_of_coordinates):
     copy = list_of_coordinates.copy()
     for coordinates in copy:
-        # loop from 1st to penultimate index
         for i in range(1, len(coordinates)-1):
+            # replace each coordinate with the average of two surrounding coordinates
             coordinates[i] = (coordinates[i-1] + coordinates[i+1]) / 2
     return copy
 
@@ -191,19 +189,18 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
         all_final_x.append(pred_x[-1])
         all_final_y.append(pred_y[-1])
     
-    # run kernel density estimate
+    # Run kernel density estimation
     values = np.vstack([all_final_x, all_final_y])
     kernel = st.gaussian_kde(values)
-    # evaluate trajectories
+    # Evaluate trajectories
     evaluated = kernel.evaluate(values)
-    # find the sorting order for the trajectories based on KDE pdf
+    # Find the sorting order for the trajectories based on KDE pdf
     sorting_order = evaluated.argsort()[::-1] # Note: the sorting order is ascending by default, [::-1] reverses the order (might be too slow though?)
     
-    # sort predictions by KDE density
+    # Sort predictions by KDE density
     sorted_all_pred_x = np.array(all_pred_x)[sorting_order]
     sorted_all_pred_y = np.array(all_pred_y)[sorting_order]
     
-    # distribute the data to representative sets
     no_of_traj = len(sorted_all_pred_x)
 
     # The first group has a slightly different behaviour than the rest. We don't want to just take the top [first_group_size] % of
@@ -237,11 +234,11 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
                 closest_distances[index_max] = distance
                 largest_distance = np.amax(closest_distances)
     
-    # get the closest trajectories
+    # Get the closest trajectories
     closest_x = sorted_all_pred_x[closest_indexes]
     closest_y = sorted_all_pred_y[closest_indexes]
 
-    # remove the closest trajectories from the data...
+    # Remove the closest trajectories from the data...
     sorted_all_pred_x = np.delete(sorted_all_pred_x, closest_indexes, axis=0)
     sorted_all_pred_y = np.delete(sorted_all_pred_y, closest_indexes, axis=0)
     
@@ -253,12 +250,13 @@ def predict(sample_x, sample_y, params, trajectory_length=5, clustering_method='
     return_values = [[], [], []]
 
     ## Loop over the representative groups and run K-means clustering on each
-    ## (if group should return more than 1 representative trajectory)
+    ## (if the group should return more than 1 representative trajectory)
     prev_group_size_end = 0
     group_size_ends = params['GROUP_PERCENTAGES']
     for group_idx, group_size_end in enumerate(group_size_ends):
         group_cluster_count = params['GROUP_CLUSTER_COUNT'][group_idx]
         
+        # Get the current group of generated trajectories
         group_x = sorted_all_pred_x[int(no_of_traj*prev_group_size_end):int(no_of_traj*group_size_end)]
         group_y = sorted_all_pred_y[int(no_of_traj*prev_group_size_end):int(no_of_traj*group_size_end)]
         
