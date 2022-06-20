@@ -98,8 +98,8 @@ class Play:
         predicted_trajectories_prev = []
 
         # Get the entire historical trajectories
-        all_trajs_whole = traj_dataset.groupby('agent_id')
-        all_trajs_whole = [v[['pos_x', 'pos_y']].to_numpy() for k, v in all_trajs_whole]
+        #all_trajs_whole = traj_dataset.groupby('agent_id')
+        #all_trajs_whole = [v[['pos_x', 'pos_y']].to_numpy() for k, v in all_trajs_whole]
 
         while True:
             if self.is_a_video(media_file) and not pause:
@@ -127,9 +127,9 @@ class Play:
                 self.draw_trajectory(TRAJ_i, (255, 255, 0), 2)
 
                 # draw the entire history
-                traj_whole_i = all_trajs_whole[i]
-                TRAJ_whole_i = self.to_image_frame(Hinv, traj_whole_i)
-                self.draw_trajectory(TRAJ_whole_i, (255, 255, 0), 1)
+                #traj_whole_i = all_trajs_whole[i]
+                #TRAJ_whole_i = self.to_image_frame(Hinv, traj_whole_i)
+                #self.draw_trajectory(TRAJ_whole_i, (255, 255, 0), 1)
 
                 predicted_trajectories = []
                 if len(traj_i) >= 3 and not pause and t%4 == 0:

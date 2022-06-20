@@ -46,7 +46,9 @@ An experiment comparing the performance of the new method to Trajectron++ and th
 ## Visualization
 A visualization script `visualize.py` is included for illustrating the workflow 
 of the new method in real time on existing datasets. It opens a PyQt UI which allows to 
-visualize the movement of humans in the ETH dataset and the predictions of the new forecasting method.  
+visualize the movement of humans in the ETH dataset and the predictions of the new forecasting method.
+
+![visualization demo](media/visualization_demo.gif)
 
 The script is based on the visualization script provided in the OpenTraj repository (https://github.com/crowdbotp/OpenTraj). 
 The datasets with videos are sourced from there as well.
